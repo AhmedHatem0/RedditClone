@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @Setter
 @RequiredArgsConstructor
 @NoArgsConstructor
-public class User implements UserDetails {
+public class MyUser implements UserDetails {
 
     @Id
     @GeneratedValue
