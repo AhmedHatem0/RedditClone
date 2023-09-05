@@ -11,7 +11,6 @@ import com.example.reddit.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,18 +21,22 @@ public class DatabaseLoader implements CommandLineRunner {
 
     private LinkRepository linkRepository;
     private CommentRepository commentRepository;
-    private UserRepository  userRepository;
+    private UserRepository userRepository;
     private RoleRepository roleRepository;
 
-    public DatabaseLoader(LinkRepository linkRepository, CommentRepository commentRepository,RoleRepository roleRepository,UserRepository  userRepository) {
+    private Map<String,MyUser> users = new HashMap<>();
+
+    public DatabaseLoader(LinkRepository linkRepository, CommentRepository commentRepository, UserRepository userRepository, RoleRepository roleRepository) {
         this.linkRepository = linkRepository;
         this.commentRepository = commentRepository;
-        this.roleRepository = roleRepository;
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
     }
 
     @Override
     public void run(String... args) {
+
+        // add users and roles
         addUsersAndRoles();
 
         Map<String,String> links = new HashMap<>();
@@ -50,7 +53,15 @@ public class DatabaseLoader implements CommandLineRunner {
         links.put("File download example using Spring REST Controller","https://www.jeejava.com/file-download-example-using-spring-rest-controller/");
 
         links.forEach((k,v) -> {
+            MyUser u1 = users.get("user@gmail.com");
+            MyUser u2 = users.get("super@gmail.com");
             Link link = new Link(k,v);
+            if(k.startsWith("Build")) {
+                link.setUser(u1);
+            } else {
+                link.setUser(u2);
+            }
+
             linkRepository.save(link);
 
             // we will do something with comments later
@@ -66,9 +77,8 @@ public class DatabaseLoader implements CommandLineRunner {
 
         long linkCount = linkRepository.count();
         System.out.println("Number of links in the database: " + linkCount );
-
-
     }
+
     private void addUsersAndRoles() {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         String secret = "{bcrypt}" + encoder.encode("password");
@@ -78,17 +88,24 @@ public class DatabaseLoader implements CommandLineRunner {
         Role adminRole = new Role("ROLE_ADMIN");
         roleRepository.save(adminRole);
 
-        MyUser myUser = new MyUser("user@gmail.com",secret,true);
-        myUser.addRole(userRole);
-        userRepository.save(myUser);
+        MyUser user = new MyUser("user@gmail.com",secret,true,"Joe","User","joedirt");
+        user.addRole(userRole);
+        user.setConfirmPassword(secret);
+        userRepository.save(user);
+        users.put("user@gmail.com",user);
 
-        MyUser admin = new MyUser("admin@gmail.com",secret,true);
+        MyUser admin = new MyUser("admin@gmail.com",secret,true,"Joe","Admin","masteradmin");
+        admin.setAlias("joeadmin");
+        admin.setConfirmPassword(secret);
         admin.addRole(adminRole);
         userRepository.save(admin);
+        users.put("admin@gmail.com",admin);
 
-        MyUser master = new MyUser("super@gmail.com",secret,true);
+        MyUser master = new MyUser("super@gmail.com",secret,true,"Super","User","superduper");
         master.addRoles(new HashSet<>(Arrays.asList(userRole,adminRole)));
+        master.setConfirmPassword(secret);
         userRepository.save(master);
-
+        users.put("super@gmail.com",master);
     }
+
 }

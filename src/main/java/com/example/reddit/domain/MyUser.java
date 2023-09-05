@@ -1,11 +1,13 @@
 package com.example.reddit.domain;
 
+import com.example.reddit.domain.validator.PasswordsMatch;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 import java.util.Collection;
 import java.util.HashSet;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 @Setter
 @RequiredArgsConstructor
 @NoArgsConstructor
+@PasswordsMatch
 public class MyUser implements UserDetails {
 
     @Id
@@ -33,9 +36,33 @@ public class MyUser implements UserDetails {
     @Column(length = 100)
     private String password;
 
+    @Transient
+    @NotEmpty(message = "Please enter Password Confirmation.")
+    private String confirmPassword;
+
     @NonNull
     @Column(nullable = false)
     private boolean enabled;
+    @NonNull
+    @NotEmpty(message = "You must enter First Name.")
+    private String firstName;
+
+    @NonNull
+    @NotEmpty(message = "You must enter Last Name.")
+    private String lastName;
+
+    @Transient
+    @Setter(AccessLevel.NONE)
+    private String fullName;
+
+    @NonNull
+    @NotEmpty(message = "Please enter alias.")
+    @Column(nullable = false, unique = true)
+    private String alias;
+
+    public String getFullName(){
+        return firstName + " " + lastName;
+    }
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
