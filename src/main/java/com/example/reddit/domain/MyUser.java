@@ -55,6 +55,8 @@ public class MyUser implements UserDetails {
     @Setter(AccessLevel.NONE)
     private String fullName;
 
+    private String activationCode;
+
     @NonNull
     @NotEmpty(message = "Please enter alias.")
     @Column(nullable = false, unique = true)
