@@ -1,6 +1,8 @@
 package com.example.reddit.controller;
 
+import com.example.reddit.domain.Comment;
 import com.example.reddit.domain.Link;
+import com.example.reddit.repository.CommentRepository;
 import com.example.reddit.repository.LinkRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,24 +21,33 @@ public class LinkController {
     private static final Logger logger = LoggerFactory.getLogger(LinkController.class);
 
     LinkRepository linkRepository;
-    public LinkController(LinkRepository linkRepository){
+    CommentRepository commentRepository;
+
+    public LinkController(LinkRepository linkRepository, CommentRepository commentRepository) {
         this.linkRepository = linkRepository;
+        this.commentRepository = commentRepository;
     }
+
     @GetMapping("/")
     public String list(Model model){
         model.addAttribute("links", linkRepository.findAll());
         return "link/list";
     }
 
-    @GetMapping("link/{id}")
-    public String read(@PathVariable Long id, Model model){
+    @GetMapping("/link/{id}")
+    public String read(@PathVariable Long id,Model model) {
         Optional<Link> link = linkRepository.findById(id);
-        if(link.isPresent()) {
-            model.addAttribute("link", link.get());
+        if( link.isPresent() ) {
+            Link currentLink = link.get();
+            Comment comment = new Comment();
+            comment.setLink(currentLink);
+            model.addAttribute("comment",comment);
+            model.addAttribute("link",currentLink);
             model.addAttribute("success", model.containsAttribute("success"));
             return "link/view";
+        } else {
+            return "redirect:/";
         }
-        else return "redirect:/";
     }
     @GetMapping("/link/submit")
     public String newLinkForm(Model model) {
@@ -60,6 +71,16 @@ public class LinkController {
                      .addFlashAttribute("success", true);
              return "redirect:/link/{id}";
          }
+    }
+    @PostMapping("/link/comments")
+    public String addComment(@Valid Comment comment, BindingResult bindingResult, Model model, RedirectAttributes redirectAttributes) {
+        if( bindingResult.hasErrors() ) {
+            logger.info("Something went wrong.");
+        } else {
+            logger.info("New Comment Saved!");
+            commentRepository.save(comment);
+        }
+        return "redirect:/link/" + comment.getLink().getId();
     }
 
 
